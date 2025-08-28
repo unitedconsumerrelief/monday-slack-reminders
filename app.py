@@ -143,7 +143,7 @@ def set_text_column_by_title(item_id: int | str, wanted_title: str, value_str: s
             return
 
     mutation = """
-    mutation($boardId: Int!, $itemId: Int!, $columnId: String!, $value: String!) {
+    mutation($boardId: ID!, $itemId: ID!, $columnId: String!, $value: String!) {
       change_simple_column_value(
         board_id: $boardId,
         item_id: $itemId,
@@ -157,8 +157,8 @@ def set_text_column_by_title(item_id: int | str, wanted_title: str, value_str: s
     monday_graphql(
         mutation,
         {
-            "boardId": int(BOARD_ID),
-            "itemId": int(item_id),
+            "boardId": str(BOARD_ID),
+            "itemId": str(item_id),
             "columnId": col_id,
             "value": payload_value,
         },
