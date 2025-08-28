@@ -121,9 +121,19 @@ def fetch_items() -> list[dict]:
 
 def get_col_text_by_title(item: dict, wanted_title: str) -> str:
     target = (wanted_title or "").strip().lower()
+    print(f"[DEBUG] Looking for column '{wanted_title}' (target: '{target}')")
+    print(f"[DEBUG] Available column_values: {item.get('column_values', [])}")
+    
     for cv in item.get("column_values", []):
-        if (cv.get("type") or "").strip().lower() == target:
-            return (cv.get("text") or "").strip()
+        cv_type = (cv.get("type") or "").strip().lower()
+        cv_text = (cv.get("text") or "").strip()
+        print(f"[DEBUG] Checking column: type='{cv_type}', text='{cv_text}'")
+        
+        if cv_type == target:
+            print(f"[DEBUG] ✅ Found match! Returning: '{cv_text}'")
+            return cv_text
+    
+    print(f"[DEBUG] ❌ No match found for '{wanted_title}'")
     return ""
 
 
