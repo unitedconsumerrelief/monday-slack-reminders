@@ -240,11 +240,11 @@ def background_loop():
 def health():
     return "OK"
 
-
 # ──────────────────────────────────────────────────────────────────────────────
-# Entrypoint
+# Background thread startup (runs when Gunicorn starts)
 # ──────────────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
+def start_background_thread():
+    """Start the background polling thread when the app is created"""
     print("[INFO] Starting Monday→Slack reminders app...")
     print(f"[INFO] Board ID: {BOARD_ID}")
     print(f"[INFO] Poll interval: {POLL_SECONDS} seconds")
@@ -255,7 +255,15 @@ if __name__ == "__main__":
     background_thread = threading.Thread(target=background_loop, daemon=True)
     background_thread.start()
     print("[INFO] Background thread started successfully")
-    
+
+# Start the background thread when the app is created
+start_background_thread()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Entrypoint (for local development only)
+# ──────────────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
     # Run web server (Render uses gunicorn in production)
-    print("[INFO] Starting Flask web server...")
+    print("[INFO] Starting Flask web server for local development...")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
