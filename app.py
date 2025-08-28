@@ -130,22 +130,28 @@ def get_col_text_by_title(item: dict, wanted_title: str) -> str:
     print(f"[DEBUG] Looking for column '{wanted_title}' (target: '{target}')")
     print(f"[DEBUG] Available column_values: {item.get('column_values', [])}")
     
+    # First, get the column ID from the columns map
+    cmap = get_columns_map()
+    target_col_id = cmap.get(target)
+    print(f"[DEBUG] Looking for column ID: {target_col_id}")
+    
     for cv in item.get("column_values", []):
+        cv_id = cv.get("id", "")
         cv_type = (cv.get("type") or "").strip().lower()
         cv_text = (cv.get("text") or "").strip()
         cv_value = (cv.get("value") or "").strip()
         cv_additional = (cv.get("additional_info") or "").strip()
         
-        print(f"[DEBUG] Checking column: type='{cv_type}', text='{cv_text}', value='{cv_value}', additional='{cv_additional}'")
+        print(f"[DEBUG] Checking column: id='{cv_id}', type='{cv_type}', text='{cv_text}', value='{cv_value}', additional='{cv_additional}'")
         
-        # Try to match by type first
-        if cv_type == target:
-            print(f"[DEBUG] ✅ Found match by type! Returning: '{cv_text}'")
+        # Try to match by column ID first (most reliable)
+        if cv_id == target_col_id:
+            print(f"[DEBUG] ✅ Found match by column ID! Returning: '{cv_text}'")
             return cv_text
         
-        # For dropdown columns, the text might be in 'value' or 'additional_info'
-        if cv_type in ["dropdown", "status", "select"] and cv_text:
-            print(f"[DEBUG] ✅ Found dropdown column! Returning: '{cv_text}'")
+        # Try to match by type (fallback)
+        if cv_type == target:
+            print(f"[DEBUG] ✅ Found match by type! Returning: '{cv_text}'")
             return cv_text
     
     print(f"[DEBUG] ❌ No match found for '{wanted_title}'")
