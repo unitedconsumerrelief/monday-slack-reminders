@@ -113,8 +113,6 @@ def fetch_items() -> list[dict]:
               id 
               type 
               text 
-              value
-              additional_info
             }
           }
         }
@@ -139,10 +137,8 @@ def get_col_text_by_title(item: dict, wanted_title: str) -> str:
         cv_id = cv.get("id", "")
         cv_type = (cv.get("type") or "").strip().lower()
         cv_text = (cv.get("text") or "").strip()
-        cv_value = (cv.get("value") or "").strip()
-        cv_additional = (cv.get("additional_info") or "").strip()
         
-        print(f"[DEBUG] Checking column: id='{cv_id}', type='{cv_type}', text='{cv_text}', value='{cv_value}', additional='{cv_additional}'")
+        print(f"[DEBUG] Checking column: id='{cv_id}', type='{cv_type}', text='{cv_text}'")
         
         # Try to match by column ID first (most reliable)
         if cv_id == target_col_id:
