@@ -40,17 +40,39 @@ COLUMNS_CACHE_TTL = 10 * 60  # 10 minutes
 # Utils
 # ──────────────────────────────────────────────────────────────────────────────
 def monday_graphql(query: str, variables: dict | None = None) -> dict:
-    resp = requests.post(
-        MONDAY_API_URL,
-        headers=HEADERS,
-        json={"query": query, "variables": variables or {}},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    if "errors" in data:
-        raise RuntimeError(data["errors"])
-    return data["data"]
+    print(f"[DEBUG] Making Monday.com GraphQL request...")
+    print(f"[DEBUG] Headers: {dict(HEADERS)}")
+    print(f"[DEBUG] Query: {query[:100]}...")
+    print(f"[DEBUG] Variables: {variables}")
+    
+    try:
+        resp = requests.post(
+            MONDAY_API_URL,
+            headers=HEADERS,
+            json={"query": query, "variables": variables or {}},
+            timeout=30,
+        )
+        print(f"[DEBUG] Response status: {resp.status_code}")
+        
+        if resp.status_code != 200:
+            print(f"[ERROR] HTTP {resp.status_code}: {resp.text}")
+            resp.raise_for_status()
+            
+        data = resp.json()
+        print(f"[DEBUG] Response data keys: {list(data.keys())}")
+        
+        if "errors" in data:
+            print(f"[ERROR] GraphQL errors: {data['errors']}")
+            raise RuntimeError(data["errors"])
+            
+        return data["data"]
+        
+    except Exception as e:
+        print(f"[ERROR] Monday.com GraphQL request failed: {e}")
+        print(f"[ERROR] Error type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Full traceback: {traceback.format_exc()}")
+        raise
 
 
 def get_columns_map(force_refresh: bool = False) -> dict:
@@ -170,10 +192,15 @@ def should_notify(last_epoch_text: str, now_epoch: float, interval_hours: float)
 # ──────────────────────────────────────────────────────────────────────────────
 def process_cycle():
     now = time.time()
+    print(f"[INFO] Fetching items from Monday.com board {BOARD_ID}...")
     try:
         items = fetch_items()
+        print(f"[INFO] Successfully fetched {len(items)} items from Monday.com")
     except Exception as e:
-        print("[ERROR] Fetch items failed:", e)
+        print(f"[ERROR] Fetch items failed: {e}")
+        print(f"[ERROR] Error type: {type(e).__name__}")
+        import traceback
+        print(f"[ERROR] Full traceback: {traceback.format_exc()}")
         return
 
     for it in items:
@@ -198,7 +225,14 @@ def process_cycle():
             continue
 
         # Choose Slack channel (default to DL if anything else)
+        print(f"[DEBUG] Item {item_id} ({name}): tag='{tag}', status='{status}'")
+        print(f"[DEBUG] Available webhooks - UCR: {'✓' if SLACK_WEBHOOK_UCR else '✗'}, DL: {'✓' if SLACK_WEBHOOK_DL else '✗'}")
+        
         webhook = SLACK_WEBHOOK_UCR if tag == "UCR" else SLACK_WEBHOOK_DL
+        webhook_type = "UCR" if tag == "UCR" else "DL"
+        
+        print(f"[DEBUG] Selected webhook: {webhook_type} (tag: {tag})")
+        
         if not webhook:
             print(f"[WARN] No webhook configured for tag '{tag}' on item {item_id}; skipping.")
             continue
@@ -211,11 +245,12 @@ def process_cycle():
                 f"⏱️ Reminders every {int(NOTIFY_INTERVAL_HOURS)}h until status changes to *Active*."
             )
             try:
+                print(f"[DEBUG] Sending Slack notification to {webhook_type} webhook...")
                 post_to_slack(webhook, text)
                 set_text_column_by_title(item_id, COLUMN_LAST_NOTIFIED_TITLE, str(int(now)))
-                print(f"[INFO] Notified for item {item_id} ({name}) to {('UCR' if webhook == SLACK_WEBHOOK_UCR else 'DL')}.")
+                print(f"[INFO] ✅ Successfully notified item {item_id} ({name}) to {webhook_type} channel")
             except Exception as e:
-                print(f"[ERROR] Slack or Monday update failed for item {item_id}: {e}")
+                print(f"[ERROR] ❌ Slack or Monday update failed for item {item_id}: {e}")
 
 
 def background_loop():
