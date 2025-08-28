@@ -219,11 +219,17 @@ def process_cycle():
 
 
 def background_loop():
+    print("[INFO] Background polling loop started")
+    cycle_count = 0
     while True:
+        cycle_count += 1
+        print(f"[INFO] Starting poll cycle #{cycle_count}")
         try:
             process_cycle()
+            print(f"[INFO] Completed poll cycle #{cycle_count}")
         except Exception as e:
-            print("[ERROR] Uncaught in cycle:", e)
+            print(f"[ERROR] Uncaught error in cycle #{cycle_count}:", e)
+        print(f"[INFO] Waiting {POLL_SECONDS} seconds until next poll...")
         time.sleep(POLL_SECONDS)
 
 
@@ -239,7 +245,17 @@ def health():
 # Entrypoint
 # ──────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
+    print("[INFO] Starting Monday→Slack reminders app...")
+    print(f"[INFO] Board ID: {BOARD_ID}")
+    print(f"[INFO] Poll interval: {POLL_SECONDS} seconds")
+    print(f"[INFO] Notify interval: {NOTIFY_INTERVAL_HOURS} hours")
+    
     # Start background worker
-    threading.Thread(target=background_loop, daemon=True).start()
+    print("[INFO] Starting background polling thread...")
+    background_thread = threading.Thread(target=background_loop, daemon=True)
+    background_thread.start()
+    print("[INFO] Background thread started successfully")
+    
     # Run web server (Render uses gunicorn in production)
+    print("[INFO] Starting Flask web server...")
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
