@@ -237,6 +237,12 @@ def process_cycle():
         status = get_col_text_by_title(it, COLUMN_STATUS_TITLE).lower()
         tag = get_col_text_by_title(it, COLUMN_TAG_TITLE).strip().upper()
         last_notified = get_col_text_by_title(it, COLUMN_LAST_NOTIFIED_TITLE)
+        
+        print(f"[DEBUG] Column values for item {item_id}:")
+        print(f"[DEBUG]   - Status: '{status}'")
+        print(f"[DEBUG]   - Tag: '{tag}'")
+        print(f"[DEBUG]   - Last Notified: '{last_notified}'")
+        print(f"[DEBUG]   - Should notify: {should_notify(last_notified, now, NOTIFY_INTERVAL_HOURS)}")
 
         # Stop logic: if status becomes Active, clear the marker and skip
         if status == "active":
