@@ -22,7 +22,7 @@ SLACK_WEBHOOK_DL  = os.getenv("SLACK_WEBHOOK_DL", "").strip()
 
 # Behaviour knobs
 NOTIFY_INTERVAL_HOURS = float(os.getenv("NOTIFY_INTERVAL_HOURS", "2"))  # every 2h by default
-POLL_SECONDS = int(os.getenv("POLL_SECONDS", "300"))                    # poll Monday every 5 min
+POLL_SECONDS = int(os.getenv("POLL_SECONDS", "1800"))                   # poll Monday every 30 min
 
 # ──────────────────────────────────────────────────────────────────────────────
 # HTTP setup
@@ -180,7 +180,8 @@ def set_text_column_by_title(item_id: int | str, wanted_title: str, value_str: s
     }
     """
     # Monday expects the "value" field itself to be a JSON string.
-    payload_value = json.dumps(str(value_str))
+    # But we need to avoid double-quoting the value
+    payload_value = json.dumps(value_str)
     monday_graphql(
         mutation,
         {
@@ -207,11 +208,25 @@ def universal_item_link(board_id: int, item_id: int | str) -> str:
 def should_notify(last_epoch_text: str, now_epoch: float, interval_hours: float) -> bool:
     if not last_epoch_text:
         return True
+    
+    # Strip any surrounding quotes that Monday.com might add
+    cleaned_text = last_epoch_text.strip().strip('"').strip("'")
+    
     try:
-        last = float(last_epoch_text)
+        last = float(cleaned_text)
     except ValueError:
+        print(f"[WARN] Could not parse last_notified timestamp: '{last_epoch_text}' (cleaned: '{cleaned_text}')")
         return True
-    return (now_epoch - last) >= interval_hours * 3600
+    
+    time_since_last = now_epoch - last
+    should_notify_result = time_since_last >= interval_hours * 3600
+    
+    print(f"[DEBUG] Last notified: {last} ({time.ctime(last)})")
+    print(f"[DEBUG] Now: {now_epoch} ({time.ctime(now_epoch)})")
+    print(f"[DEBUG] Time since last: {time_since_last/3600:.2f} hours")
+    print(f"[DEBUG] Should notify: {should_notify_result}")
+    
+    return should_notify_result
 
 
 # ──────────────────────────────────────────────────────────────────────────────
