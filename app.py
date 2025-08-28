@@ -292,7 +292,7 @@ def start_background_thread():
     print("[INFO] Background thread started successfully")
 
 # Start the background thread when the app is created
-start_background_thread()
+start_background_thread()  # Force redeploy
 
 
 # ──────────────────────────────────────────────────────────────────────────────
